@@ -1,0 +1,38 @@
+*
+{
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body
+{
+    overflow: hidden;
+}
+
+.webgl
+{
+    position: fixed;
+    top: 0;
+    left: 0;
+    outline: none;
+}
+
+
+h1 {
+    position: absolute;
+    color: white;
+    width: 100%;
+    text-align: center;
+    font-size: 80px;
+}
+
+h2 {
+    position: absolute;
+    color: white;
+    bottom: 40px;
+    width: 100%;
+    text-align: center;
+    font-size: 70px;
+
+}
