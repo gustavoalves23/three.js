@@ -37,7 +37,7 @@ const scene = new THREE.Scene()
 
 // Modern way, using bufferGeometry
 
-const count = 1000;
+const count = 2;
 
 const geometry = new THREE.BufferGeometry();
 
