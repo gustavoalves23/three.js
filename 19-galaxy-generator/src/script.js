@@ -77,6 +77,8 @@ const generateGalaxy = () => {
 
         const spinAngle = radius * parameters.spin;
 
+        //Afinamento
+
         const afinamento = (parameters.radius - radius)/parameters.radius;
 
 
