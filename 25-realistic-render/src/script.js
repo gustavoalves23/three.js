@@ -11,6 +11,9 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
  */
 // Debug
 const gui = new dat.GUI()
+const debugObject = {
+    envMapIntensity: 5,
+}
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
@@ -18,26 +21,84 @@ const canvas = document.querySelector('canvas.webgl')
 // Scene
 const scene = new THREE.Scene()
 
+/**
+ * Update all materials
+ */
+
+
+const updateAllMaterials = () => {
+    scene.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+            child.material.envMap = environmentMap;
+            child.material.envMapIntensity = debugObject.envMapIntensity;
+            child.material.needsUpdate = true;
+            child.castShadow = true;
+            child.receiveShadow = true;
+            // child.material.roughness = 0;
+        }
+    })
+}
+
+
 //Loaders
-const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath('/draco/')
+// const dracoLoader = new DRACOLoader();
+// dracoLoader.setDecoderPath('/draco/')
 
 const gltfLoader = new GLTFLoader();
-gltfLoader.setDRACOLoader(dracoLoader);
+// gltfLoader.setDRACOLoader(dracoLoader);
 
-// gltfLoader.load('./models/FlightHelmet/glTF/FlightHelmet.gltf', (gltf) => {
-//     console.log(gltf);
-// })
+const cubeTextureLoader = new THREE.CubeTextureLoader();
 
 
 /**
- * Test sphere
+ * Environment Maps
  */
-const testSphere = new THREE.Mesh(
-    new THREE.SphereGeometry(1, 32, 32),
-    new THREE.MeshBasicMaterial()
-)
-scene.add(testSphere)
+
+ const environmentMap = cubeTextureLoader.setPath('./textures/environmentMaps/0/')
+ .load([
+     'px.jpg',
+     'nx.jpg',
+     'py.jpg',
+     'ny.jpg',
+     'pz.jpg',
+     'nz.jpg',
+ ]);
+
+ environmentMap.encoding = THREE.sRGBEncoding;
+  //To make things look realistic, we use sRGBEncoding on every visible texture, like color texture and envMap texture,
+  // In this case, we dont need to use it on the helmet color textures because GLTFLoader do this for us.
+
+ scene.background = environmentMap;
+
+ /**
+  * Models
+  */
+
+//   gltfLoader.load('./models/FlightHelmet/glTF/FlightHelmet.gltf', (gltf) => {
+//     gltf.scene.scale.set(10, 10, 10);
+//     gltf.scene.position.set(0, -4, 0);
+//     gltf.scene.rotation.y = Math.PI / 2;
+//     scene.add(gltf.scene);
+
+//     const HelmetGUI = gui.addFolder('Helmet');
+//     HelmetGUI.add(gltf.scene.rotation, 'y').min(- Math.PI).max(Math.PI).step(0.001).name('Rotation Y');
+//     HelmetGUI.add(debugObject, 'envMapIntensity').min(0).max(20).step(0.001).onChange(updateAllMaterials);
+// updateAllMaterials()
+// })
+
+  gltfLoader.load('./models/hamburger.glb', (gltf) => {
+    gltf.scene.scale.set(0.3, 0.3, 0.3);
+    gltf.scene.position.set(0, -4, 0);
+    gltf.scene.rotation.y = Math.PI / 2;
+    scene.add(gltf.scene);
+
+    const HelmetGUI = gui.addFolder('Helmet');
+    HelmetGUI.add(gltf.scene.rotation, 'y').min(- Math.PI).max(Math.PI).step(0.001).name('Rotation Y');
+    HelmetGUI.add(debugObject, 'envMapIntensity').min(0).max(20).step(0.001).onChange(updateAllMaterials);
+updateAllMaterials()
+})
+
+
 
 /**
  * Sizes
@@ -70,6 +131,7 @@ const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 
 camera.position.set(4, 1, - 4)
 scene.add(camera)
 
+
 // Controls
 const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
@@ -78,16 +140,66 @@ controls.enableDamping = true
  * Renderer
  */
 const renderer = new THREE.WebGLRenderer({
-    canvas: canvas
+    canvas: canvas,
+    antialias: true,
 })
-renderer.setSize(sizes.width, sizes.height)
+
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.setSize(sizes.width, sizes.height);
+renderer.physicallyCorrectLights = true;
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+/**
+ * There is something called HDR, with allows RGB scales to go beyong 1. There is something called toneMap that can scale it to SDR using different algorythims,
+ * Our textures are not in HDR, but we will use it in a wrong way because it will looks great anyway
+ */
+
+renderer.toneMapping  = THREE.ReinhardToneMapping;
+
+gui.add(renderer, 'toneMapping', {
+    No: THREE.NoToneMapping,
+    Linear: THREE.LinearToneMapping,
+    Reinhard: THREE.ReinhardToneMapping,
+    Cineon: THREE.CineonToneMapping,
+    ACESFilmic: THREE.ACESFilmicToneMapping,
+}).onFinishChange(updateAllMaterials)
+
+gui.add(renderer, 'toneMappingExposure').min(0).max(10);
+
+/**
+ * lights
+ */
+
+const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 3);
+directionalLight.position.set(0.25, 3, -2.25);
+directionalLight.castShadow = true;
+directionalLight.shadow.camera.far = 8;
+directionalLight.shadow.mapSize.height = 1024;
+directionalLight.shadow.mapSize.width = 1024;
+
+//To fix some strange shadow lines you can apply normal BIAS
+//More about that on end of lesson
+
+directionalLight.shadow.normalBias = 0.05;
+scene.add(directionalLight);
+
+const directionalLightGUI = gui.addFolder('directionalLight');
+directionalLightGUI.addColor(directionalLight, 'color');
+directionalLightGUI.add(directionalLight, 'intensity').min(0).max(5).step(0.01);
+directionalLightGUI.add(directionalLight.position, 'x').min(-5).max(5).step(0.001);
+directionalLightGUI.add(directionalLight.position, 'y').min(-5).max(5).step(0.001);
+directionalLightGUI.add(directionalLight.position, 'z').min(-5).max(5).step(0.001);
 
 /**
  * Animate
  */
+
+
 const tick = () =>
 {
+
     // Update controls
     controls.update()
 
