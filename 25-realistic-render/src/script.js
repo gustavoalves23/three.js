@@ -25,19 +25,11 @@ dracoLoader.setDecoderPath('/draco/')
 const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader(dracoLoader);
 
-// gltfLoader.load('./models/FlightHelmet/glTF/FlightHelmet.gltf', (gltf) => {
-//     console.log(gltf);
-// })
+gltfLoader.load('./models/FlightHelmet/glTF/FlightHelmet.gltf', (gltf) => {
+    const content = [...gltf.scene.children];
+    content.forEach((c) => scene.add(c))
+})
 
-
-/**
- * Test sphere
- */
-const testSphere = new THREE.Mesh(
-    new THREE.SphereGeometry(1, 32, 32),
-    new THREE.MeshBasicMaterial()
-)
-scene.add(testSphere)
 
 /**
  * Sizes
@@ -74,12 +66,32 @@ scene.add(camera)
 const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
 
+
+//Light
+const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 3);
+directionalLight.position.set(0.25, 3, -2.25);
+scene.add(directionalLight);
+
+const lightHelper = new THREE.DirectionalLightHelper(directionalLight);
+
+scene.add(lightHelper);
+
+const updateHelper = () => {
+    lightHelper.update()
+}
+
+gui.add(directionalLight, 'intensity').min(0).max(10).step(0.01).name('LightIntensity');
+gui.add(directionalLight.position, 'x').min(-5).max(5).step(0.001).name('lightX').onChange(updateHelper);
+gui.add(directionalLight.position, 'y').min(-5).max(5).step(0.001).name('lightY').onChange(updateHelper);
+gui.add(directionalLight.position, 'z').min(-5).max(5).step(0.001).name('lightZ').onChange(updateHelper);
+
 /**
  * Renderer
  */
 const renderer = new THREE.WebGLRenderer({
     canvas: canvas
 })
+renderer.physicallyCorrectLights = true;
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
