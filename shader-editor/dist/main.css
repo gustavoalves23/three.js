@@ -1,0 +1,41 @@
+*
+{
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body
+{
+    overflow: hidden;
+}
+
+.app {
+    display: flex;
+    flex-direction: column;
+}
+
+.text-input {
+    height: 45vh;
+    overflow: scroll;
+    font-size: 16px;
+    padding: 20px;
+}
+
+.webgl
+{
+    outline: none;
+}
+
+.hidden {
+    display: none;
+}
+
+@media screen and (min-width: 1080px) {
+    ::-webkit-scrollbar {
+        width: 0;  
+        background: transparent;  
+    }
+}
+
+/*# sourceMappingURL=main.css.map*/
